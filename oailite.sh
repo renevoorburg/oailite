@@ -1,4 +1,5 @@
 #!/bin/bash
+set +H
 
 ## declare global vars:
 CURL='curl -fs'
@@ -159,8 +160,8 @@ prepare_database()
     else 
         echo "Using database $DB."
         if [ `sqlite3 -batch $DB "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='$TABLE';"` -eq 0 ] ; then
-            echo "Created table $TABLE."
             sqlite3 -batch $DB "create table $TABLE (id TEXT PRIMARY KEY, timestamp TEXT, sourcedata TEXT);"
+            echo "Created table $TABLE."
         else 
             echo "Using table $TABLE."
         fi
