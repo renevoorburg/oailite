@@ -22,15 +22,15 @@ This is a simple OAI-PMH harvester that stores retrieved records in a sqlite dat
 The harvesting process can be paused by pressing 'p'. Restart harvest by supplying a resumptiontoken using '-r'.
 
 OPTIONS:
-   -h           Show this message
-   -v           Verbose, shows progress
-   -s  set      Specify a set to be harvested
-   -p  prefix   Choose which metadata format ('metadataPrefix') to harvest
-   -f  date     Define a 'from' date.
-   -u  date     Define an 'until' date
-   -r  token    Provide a resumptiontoken to continue a harvest
-   -d  database The sqlite database to use. Uses the set name for a database  when not supplied.
-   -t  table    The database table to use. Uses the prefix name as a table when not supplied.
+-h           Show this message
+-v           Verbose, shows progress
+-s  set      Specify a set to be harvested
+-p  prefix   Choose which metadata format ('metadataPrefix') to harvest
+-f  date     Define a 'from' date.
+-u  date     Define an 'until' date
+-r  token    Provide a resumptiontoken to continue a harvest
+-d  database The sqlite database to use. Uses the set name for a database  when not supplied.
+-t  table    The database table to use. Uses the prefix name as a table when not supplied.
 
 EXAMPLE:
 $PROG -v -s ALBA -p dcx -f 2012-02-01T09:04:23Z -b http://services.kb.nl/mdo/oai
@@ -68,10 +68,8 @@ check_software_dependencies()
 
 read_commandline_parameters()
 {
-    # read commandline paramaters:
     local option
     
-    # read commandline opions
     while getopts "hvd:t:f:u:b:s:p:r:" option ; do
         case $option in
             h)  usage
