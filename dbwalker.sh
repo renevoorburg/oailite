@@ -27,7 +27,7 @@ read_commandline_parameters()
                 ;;
             u)  UNTIL="$OPTARG"
                 ;;
-            p)  FILTER="$OPTARG"
+            p)  FILTER="$SCRIPT_DIR/$OPTARG"
                 ;;
             d)  DEST_DB=`pwd`"/$OPTARG"
                 ;;
@@ -62,10 +62,10 @@ Return all payload from GGC-THES.db, table mdoall:
 $PROG -s GGC-THES.db -t mdoall
 
 Return selected payload and process it with ./nta2schema.sh:
-$PROG -s GGC-THES.db -t mdoall -f "2023-05-15 17:56:03" -p ./nta2schema.sh
+$PROG -s GGC-THES.db -t mdoall -f "2023-05-15 17:56:03" -p "nta2schema.sh -x"
 
 Return selected payload, process it with ./nta2schema.sh and store it in OUT.db:
-$PROG -s GGC-THES.db -t mdoall -f "2023-05-15 17:56:03" -p ./nta2schema.sh -d OUT.db
+$PROG -s GGC-THES.db -t mdoall -f "2023-05-15 17:56:03" -p "nta2schema.sh -x" -d OUT.db
 
 EOF
     exit
@@ -140,7 +140,7 @@ prepare_destination_database()
 process_record()
 {
     RECORD_ID=$1
-    echo "`sqlite3 -batch $SOURCE_DB "SELECT sourcedata FROM $TABLE WHERE id='$RECORD_ID'"`" | "$FILTER" | "$PROCESSOR"
+    echo "`sqlite3 -batch $SOURCE_DB "SELECT sourcedata FROM $TABLE WHERE id='$RECORD_ID'"`" | $FILTER | "$PROCESSOR"
 }
 
 read_commandline_parameters "$@"
