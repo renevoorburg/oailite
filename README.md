@@ -1,7 +1,7 @@
 # oailite.sh
-This is a simple, shell script based, OAI-PMH harvester that stores retrieved records in an sqlite database. It is based on [https://github.com/renevoorburg/oai2linerec]()
+This is a simple, shell script based, OAI-PMH harvester that stores retrieved records in an sqlite database. It is based on [renevoorburg/oai2linerec](https://github.com/renevoorburg/oai2linerec)
 
-The database of `oailite.sh` can be reused for incremental harvesting, which is a main benefit above [https://github.com/renevoorburg/oai2linerec]() . Also, since the OAI-PMH identifiers are used as the primary keys for the database, it  won't store duplicate records, as some OAI-PMH implementations tend to deliver.
+The database of `oailite.sh` can be reused for incremental harvesting, which is a main benefit above [renevoorburg/oai2linerec](https://github.com/renevoorburg/oai2linerec) . Also, since the OAI-PMH identifiers are used as the primary keys for the database, it  won't store duplicate records, as some OAI-PMH implementations tend to deliver.
 	
 	usage: oailite.sh [OPTIONS] -b [baseURL]
 	
@@ -46,11 +46,11 @@ This is a helper script for viewing and processing data retrieved by `oailite.sh
 	./dbwalker.sh -s GGC-THES.db -t mdoall
 	
 	Return selected payload and process it with ./nta2schema.sh:
-	./dbwalker.sh -s GGC-THES.db -t mdoall -f "2023-05-15 17:56:03" -p ./nta2schema.sh
+	./dbwalker.sh -s GGC-THES.db -t mdoall -f "2023-05-15 17:56:03" -p "nta2schema.sh -x"
 	
 	Return selected payload, process it with ./nta2schema.sh and store it in OUT.db:
-	./dbwalker.sh -s GGC-THES.db -t mdoall -f "2023-05-15 17:56:03" -p ./nta2schema.sh -d OUT.db
+	./dbwalker.sh -s GGC-THES.db -t mdoall -f "2023-05-15 17:56:03" -p "nta2schema.sh -x" -d OUT.db
 
 
 # dbstore.sh
-A helper script to `dbwalker.sh`, called when a destination database has been specified.
+A helper script to `dbwalker.sh`, called when a destination database has been specified. To process the data, have a look at [renevoorburg/thes2rdf](https://github.com/renevoorburg/thes2rdf). 
