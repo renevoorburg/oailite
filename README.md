@@ -1,7 +1,7 @@
 # oailite.sh
-This is a simple, shell script based, OAI-PMH harvester that stores retrieved records in a sqlite database. It is based on https://github.com/renevoorburg/oai2linerec
+This is a simple, shell script based, OAI-PMH harvester that stores retrieved records in an sqlite database. It is based on [https://github.com/renevoorburg/oai2linerec]()
 
-The database of oailite can be reused for incremental harvesting, which is a main benefit above https://github.com/renevoorburg/oai2linerec . Also, since the OAI-PMH identifiers are used as the primary keys for the database, it  won't store duplicate records, as some OAI-PMH implementations tend to deliver.
+The database of `oailite.sh` can be reused for incremental harvesting, which is a main benefit above [https://github.com/renevoorburg/oai2linerec]() . Also, since the OAI-PMH identifiers are used as the primary keys for the database, it  won't store duplicate records, as some OAI-PMH implementations tend to deliver.
 	
 	usage: oailite.sh [OPTIONS] -b [baseURL]
 	
@@ -24,7 +24,7 @@ The database of oailite can be reused for incremental harvesting, which is a mai
 
 # dbwalker.sh
 
-This is a helper script for viewing and processing data retrieved by oailite.sh.
+This is a helper script for viewing and processing data retrieved by `oailite.sh`.
 
 	usage: ./dbwalker.sh [OPTIONS] -s [source db] -t [source table]
 	
@@ -53,4 +53,4 @@ This is a helper script for viewing and processing data retrieved by oailite.sh.
 
 
 # dbstore.sh
-A helper script to dbwalker.sh, used when a destination database is specified in dbwalker.sh.
+A helper script to `dbwalker.sh`, called when a destination database has been specified.
