@@ -20,7 +20,7 @@ The database of oailite can be reused for incremental harvesting, which is a mai
 	-t  table    The database table to use. Uses the prefix name as a table when not supplied.
 	
 	EXAMPLE:
-	/Users/rene/Work/GitHub/oailite/oailite.sh -v -s ALBA -p dcx -f 2012-02-01T09:04:23Z -b http://services.kb.nl/mdo/oai
+	./oailite.sh -v -s ALBA -p dcx -f 2012-02-01T09:04:23Z -b http://services.kb.nl/mdo/oai
 
 # dbwalker.sh
 
