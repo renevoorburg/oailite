@@ -318,5 +318,3 @@ set_parameters
 prepare_database
 
 main_loop
-
-exit
