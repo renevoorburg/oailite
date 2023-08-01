@@ -51,6 +51,3 @@ This is a helper script for viewing and processing data retrieved by `oailite.sh
 	Return selected payload, process it with ./nta2schema.sh and store it in OUT.db:
 	./dbwalker.sh -s GGC-THES.db -t mdoall -f "2023-05-15 17:56:03" -p "nta2schema.sh -x" -d OUT.db
 
-
-# dbstore.sh
-A helper script to `dbwalker.sh`, called when a destination database has been specified. To process the data, have a look at [renevoorburg/thes2rdf](https://github.com/renevoorburg/thes2rdf). 
