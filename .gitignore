@@ -1,2 +1,6 @@
 data/GGC-THES.db
 .DS_Store
+include/settings_local.sh
+OUT.db
+X.db
+data/GGC-THES.db_

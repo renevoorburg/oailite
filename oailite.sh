@@ -2,25 +2,38 @@
 set +H
 
 ## declare global vars:
-CURL='curl -fs'
-WGET='wget -q -t 3 -O -'
-PROG=$0
-IDENTIFIERS_XP="//*[local-name()='header'][not(contains(@status, 'deleted'))]/*[local-name()='identifier']"
-RESUMPTION_XP="//*[local-name()='resumptionToken']/text()"
-METADATA_XP="//*[local-name()='metadata']"
+curl='curl -fs'
+wget='wget -q -t 3 -O -'
+prog=$0
+script_dir=$(dirname "$prog")
+identifiers_xpath="//*[local-name()='header'][not(contains(@status, 'deleted'))]/*[local-name()='identifier']"
+resumptiontoken_xpath="//*[local-name()='resumptionToken']/text()"
+metadata_xpath="//*[local-name()='metadata']"
 
-RESUMPTIONTOKEN=''
+resumptiontoken=''
+get=''
 
-GET=''
+source "$script_dir/include/settings.sh"
+if [ -f "$script_dir/include/settings_local.sh" ] ; then
+    # in .gitignore:
+    source "$script_dir/include/settings_local.sh"
+fi
+
+source "$script_dir/include/${db_engine}.sh"
+if [ -f "$script_dir/include/${db_engine}_local.sh" ] ; then
+    # in .gitignore:
+    source "$script_dir/include/${db_engine}_local.sh"
+fi
 
 
-usage()
-{
+usage() {
     cat << EOF
-usage: $PROG [OPTIONS] -b [baseURL]
+usage: $prog [OPTIONS] -b [baseURL]
 
 This is a simple OAI-PMH harvester that stores retrieved records in a sqlite database. 
 The harvesting process can be paused by pressing 'p'. Restart harvest by supplying a resumptiontoken using '-r'.
+
+Select either sqlite3 or postgres to be used by editing "$script_dir/include/settings.sh".
 
 OPTIONS:
 -h           Show this message
@@ -34,24 +47,23 @@ OPTIONS:
 -t  table    The database table to use. Uses the prefix name as a table when not supplied.
 
 EXAMPLE:
-$PROG -v -s ALBA -p dcx -f 2012-02-01T09:04:23Z -b http://services.kb.nl/mdo/oai
+$prog -v -s ALBA -p dcx -f 2012-02-01T09:04:23Z -b http://services.kb.nl/mdo/oai
 
 EOF
     exit
 }
 
 
-check_software_dependencies()
-{
+check_software_dependencies() {
     # check for required tools:
     if ! hash perl 2>/dev/null; then
         echo "Requires perl. Not found. Exiting."
         exit 1
     fi
     if hash curl 2>/dev/null; then
-        GET="$CURL"
+        get="$curl"
     elif hash wget  2>/dev/null; then
-        GET="$WGET"
+        get="$wget"
     else
         echo "Requires curl or wget. Not found. Exiting."
         exit 1
@@ -60,40 +72,35 @@ check_software_dependencies()
         echo "Requires xmllint. Not found. Exiting."
         exit 1
     fi
-    if ! hash sqlite3 2>/dev/null; then
-        echo "Requires sqlite3. Not found. Exiting."
-        exit 1
-    fi
 }
 
 
-read_commandline_parameters()
-{
+read_commandline_parameters() {
     local option
     
-    while getopts "hvd:t:f:u:b:s:p:r:" option ; do
+    while getopts "hvd:t:f:u:b:s:p:r:e:" option ; do
         case $option in
             h)  usage
                 ;;
-            v)  VERBOSE=true
+            v)  verbose=true
                 ;;
-            d)  DB="$OPTARG"
+            d)  database=$(normalize_name "$OPTARG")
                 ;;
-            t)  TABLE="$OPTARG"
+            t)  table=$(normalize_name "$OPTARG")
                 ;;
-            f)  FROMPARAM="&from=$OPTARG"
+            f)  from_param="&from=$OPTARG"
                 ;;
-            u)  UNTILPARAM="&until=$OPTARG"
+            u)  until_param="&until=$OPTARG"
                 ;;
-            s)  SET="$OPTARG"
-                SETPARAM="&set=$OPTARG"
+            s)  set="$OPTARG"
+                set_param="&set=$OPTARG"
                 ;;
-            b)  BASE="$OPTARG"
+            b)  oai_base="$OPTARG"
                 ;;
-            p)  PREFIX="$OPTARG"
-                PREFIXPARAM="&metadataPrefix=$OPTARG"
+            p)  prefix="$OPTARG"
+                prefix_param="&metadataPrefix=$OPTARG"
                 ;;
-            r)  RESUMPTIONTOKEN="$OPTARG"
+            r)  resumptiontoken="$OPTARG"
                 ;;
             ?)  usage
                 ;;
@@ -102,75 +109,48 @@ read_commandline_parameters()
 }
 
 
-check_parameter_validity()
-{
-    if [ -z "$DB" ] ; then
-        if [ -z "$SET" ] ; then
+check_parameter_validity() {
+    if [ -z "$database" ] ; then
+        if [ -z "$set" ] ; then
             echo "A database (-d) or set (-s) must be specified. "
             usage
         else
-            DB="$SET.db"
+            database=$(normalize_name "$set")
         fi
     fi
-    if [ -z "$TABLE" ] ; then
-        if [ -z "$PREFIX" ] ; then
+    if [ -z "$table" ] ; then
+        if [ -z "$prefix" ] ; then
             echo "A table (-t) of prefix (-p) must be specified."
             usage
         else
-            TABLE="$PREFIX"
+            table=$(normalize_name "$prefix")
         fi
     fi 
-    if [ -z "$BASE" ] ; then
+    if [ -z "$oai_base" ] ; then
         echo "A base url (-b) must be specified."
         usage
     fi
 }
 
 
-set_parameters()
-{
-    if [ -z "$RESUMPTIONTOKEN" ] ; then
-        RESUMPTIONTOKEN='dummy'
-        URL="$BASE?verb=ListIdentifiers$FROMPARAM$UNTILPARAM$PREFIXPARAM$SETPARAM"
+set_harvest_parameters() {
+    if [ -z "$resumptiontoken" ] ; then
+        resumptiontoken='dummy'
+        url="$oai_base?verb=ListIdentifiers$from_param$until_param$prefix_param$set_param"
     else
-        URL="$BASE?verb=ListIdentifiers&resumptionToken=$RESUMPTIONTOKEN"
+        url="$oai_base?verb=ListIdentifiers&resumptionToken=$resumptiontoken"
     fi   
        
-    RESUMEPARAMS=" -b $BASE -d $DB -t $TABLE"
-    if [ "$VERBOSE" = "true" ] ; then
-        RESUMEPARAMS="$RESUMEPARAMS -v"
+    resume_params=" -b $oai_base -d $database -t $table"
+    if [ "$verbose" = "true" ] ; then
+        resume_params="$resume_params -v"
     fi
-    if [ ! -z "$PREFIX" ] ; then
-        RESUMEPARAMS="$RESUMEPARAMS -p $PREFIX"
+    if [ ! -z "$prefix" ] ; then
+        resume_params="$resume_params -p $prefix"
     fi
 }
 
-
-prepare_database()
-{
-    if [ ! -f "$DB" ] ; then
-        sqlite3 -batch $DB "create table $TABLE (id TEXT PRIMARY KEY, timestamp TEXT, sourcedata TEXT);"
-        if [ $? -ne 0 ] ; then
-            echo "An error occured when creating sqlite database $DB, table $TABLE."
-            exit 1
-        else 
-            echo "Created database $DB."
-            echo "Created table $TABLE."
-        fi
-    else 
-        echo "Using database $DB."
-        if [ `sqlite3 -batch $DB "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='$TABLE';"` -eq 0 ] ; then
-            sqlite3 -batch $DB "create table $TABLE (id TEXT PRIMARY KEY, timestamp TEXT, sourcedata TEXT);"
-            echo "Created table $TABLE."
-        else 
-            echo "Using table $TABLE."
-        fi
-    fi  
-}
-
-
-exit_on_keypress()
-{
+exit_on_keypress() {
     local listen="$1"
     local msg="$2"
     local alert="$3"
@@ -183,8 +163,7 @@ exit_on_keypress()
 }
 
 
-retry() 
-{
+retry() {
     local cmd="$@"
     local ret=0
     local n=1
@@ -219,25 +198,22 @@ retry()
 }
 
 
-show_progress()
-{
+show_progress() {
     local out="$1"
-    if [ "$VERBOSE" == "true" ] ; then
+    if [ "$verbose" == "true" ] ; then
         echo -en "$out"
     fi
 }
 
 
-log()
-{
+log() {
     local msg="$@"
     local date=`date "+%Y-%m-%d %H:%M:%S"`
     echo "$date $msg" >&2
 }
 
 
-rawurlencode() 
-{
+rawurlencode() {
     local string="${1}"
     local strlen=${#string}
     local encoded=""
@@ -255,56 +231,55 @@ rawurlencode()
 }
 
 
-harvest_identifiers()
-{
+harvest_identifiers() {
     local url="$1"
     local identifiers_xml
     local identifiers_selected
     
-    identifiers_xml="`$GET "$url"`"
+    identifiers_xml="`$get "$url"`"
     if [ $? -ne 0 ] ; then return 1 ; fi    
-    identifiers_selected="`echo "$identifiers_xml" | xmllint --xpath "$IDENTIFIERS_XP" - 2>/dev/null`"
+    identifiers_selected="`echo "$identifiers_xml" | xmllint --xpath "$identifiers_xpath" - 2>/dev/null`"
 
-    IDENTIFIERS="`echo "$identifiers_selected" | perl -pe 's@</identifier[^\S\n]*>@\n@g' | perl -pe 's@<identifier[^\S\n]*>@@'`" 
-    RESUMPTIONTOKEN="`echo "$identifiers_xml" | xmllint --xpath "$RESUMPTION_XP" - 2>/dev/null`"
-    URL="$BASE?verb=ListIdentifiers&resumptionToken=$RESUMPTIONTOKEN"
+    identifiers="`echo "$identifiers_selected" | perl -pe 's@</identifier[^\S\n]*>@\n@g' | perl -pe 's@<identifier[^\S\n]*>@@'`" 
+    resumptiontoken="`echo "$identifiers_xml" | xmllint --xpath "$resumptiontoken_xpath" - 2>/dev/null`"
+    url="$oai_base?verb=ListIdentifiers&resumptionToken=$resumptiontoken"
 }
 
 
-harvest_record()
-{
-    local id=$(rawurlencode "$1")
-    local metadata
-    
-    metadata="`$GET "$BASE?verb=GetRecord$PREFIXPARAM&identifier=$id" | xmllint --xpath "//*[local-name()='metadata']" - 2>/dev/null`"
+harvest_record() {
+    local id="$1"
+    local encoded_id=$(rawurlencode "$id")
+    local sourcedata="`$get "$oai_base?verb=GetRecord$prefix_param&identifier=$encoded_id" | xmllint --xpath "$metadata_xpath" - 2>/dev/null`"
     if [ $? -ne 0 ] ; then return 1 ; fi
 
-    sqlite3 -batch $DB  "replace into $TABLE (id, timestamp, sourcedata) values ('$1', datetime(), '$(echo "$metadata" | perl -pe "s@'@''@g")');"
+    local processed=''
+    local processor=''
+
+    store_record # $id, $sourcedata, $processed, $processor
     if [ $? -ne 0 ] ; then return 1 ; fi
         
     show_progress "."
 }
 
 
-main_loop()
-{
+main_loop() {
     local id
 
-    while [ -n "$RESUMPTIONTOKEN" ] ; do
+    while [ -n "$resumptiontoken" ] ; do
 
         # allow keypress 'p' to pause harvesting:
-        if [ -n "$IDENTIFIERS" ] ; then
-            exit_on_keypress "p" "[ Press p to pauze harvest ]" "\nHarvest paused.\nContinue harvest with $PROG -r '$RESUMPTIONTOKEN'$RESUMEPARAMS"
+        if [ -n "$identifiers" ] ; then
+            exit_on_keypress "p" "[ Press p to pauze harvest ]" "\nHarvest paused.\nContinue harvest with $prog -r '$resumptiontoken'$resume_params"
         fi
 
         # harvest: 
-        retry harvest_identifiers "$URL"
+        retry harvest_identifiers "$url"
         if [ $? -ne 0 ] ; then exit 1 ; fi
         
-        for id in `echo "$IDENTIFIERS" ` ; do
+        for id in `echo "$identifiers" ` ; do
             retry harvest_record "$id"
         done
-        show_progress "\n$RESUMPTIONTOKEN\n"
+        show_progress "\n$resumptiontoken\n"
     done
 
     show_progress "done\n"
@@ -314,7 +289,7 @@ main_loop()
 check_software_dependencies
 read_commandline_parameters "$@"
 check_parameter_validity
-set_parameters
 prepare_database
+set_harvest_parameters
 
 main_loop
