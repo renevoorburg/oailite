@@ -2,10 +2,6 @@
 #
 # dependencies for postgres
 
-# this docker container was created with
-# docker run --name some-postgres -v /Users/rene/data/pgdata:/var/lib/postgresql/data -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgres 
-
-
 esc() {
     echo "$1" | perl -pe "s@'@''@g"
 }
