@@ -15,10 +15,9 @@ normalize_name() {
     echo "$1" | sed 's@-@@g' |  tr '[:upper:]' '[:lower:]'
 }
 
-store_record() { # uses: $id, $sourcedata, $processed, $processor
-   local res
-
-    res=$(echo "INSERT INTO ${database}.${table} (id, timestamp, sourcedata, processed, processor)
+create_sql() { # uses: $id, $sourcedata, $processed, $processor
+    sql="${sql}
+        INSERT INTO ${database}.${table} (id, timestamp, sourcedata, processed, processor)
         VALUES('$id', now(), '$(esc "${sourcedata}")', '$(esc "${processed}")', '${processor}') 
         ON CONFLICT (id) 
         DO 
@@ -26,14 +25,24 @@ store_record() { # uses: $id, $sourcedata, $processed, $processor
             timestamp=now(), 
             sourcedata='$(esc "${sourcedata}")',
             processed='$(esc "${processed}")',
-            processor='${processor}'; " | ${DB_CLIENT} 2> /dev/null)
+            processor='${processor}'; "
+}
 
-    if [ ! "$res" == "INSERT 0 1" ] ; then 
-        echo "Error, could not write record ${id}."
+process_sql() {
+    local res
+
+    # why doesn't this approach process all sql??:
+    #res=$(echo "${sql}" | ${DB_CLIENT} 2> /dev/null | head -n 1) 
+
+    res=$(echo "${sql}" | ${DB_CLIENT} 2> /dev/null) 
+
+    if [ ! "$(echo "${res}" | head -n 1)" == "INSERT 0 1" ] ; then 
+        echo "Error, could not write or update records."
         exit 1
     fi
-
+    sql=""
 }
+
 
 prepare_database() {
     local res
@@ -52,6 +61,6 @@ prepare_database() {
         exit 1
     fi
 
-    echo "DB engine: ${db_engine}."
+    echo "DB engine: ${DB_ENGINE}."
     echo "Storing in: ${database}.${table}."
 }

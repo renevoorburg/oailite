@@ -19,10 +19,10 @@ if [ -f "$script_dir/include/settings_local.sh" ] ; then
     source "$script_dir/include/settings_local.sh"
 fi
 
-source "$script_dir/include/${db_engine}.sh"
-if [ -f "$script_dir/include/${db_engine}_local.sh" ] ; then
+source "$script_dir/include/${DB_ENGINE}.sh"
+if [ -f "$script_dir/include/${DB_ENGINE}_local.sh" ] ; then
     # in .gitignore:
-    source "$script_dir/include/${db_engine}_local.sh"
+    source "$script_dir/include/${DB_ENGINE}_local.sh"
 fi
 
 
@@ -255,7 +255,7 @@ harvest_record() {
     local processed=''
     local processor=''
 
-    store_record # $id, $sourcedata, $processed, $processor
+    create_sql # $id, $sourcedata, $processed, $processor
     if [ $? -ne 0 ] ; then return 1 ; fi
         
     show_progress "."
@@ -264,6 +264,7 @@ harvest_record() {
 
 main_loop() {
     local id
+    local sql=''
 
     while [ -n "$resumptiontoken" ] ; do
 
@@ -279,6 +280,9 @@ main_loop() {
         for id in `echo "$identifiers" ` ; do
             retry harvest_record "$id"
         done
+
+        process_sql
+
         show_progress "\n$resumptiontoken\n"
     done
 
