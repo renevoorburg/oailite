@@ -1,4 +1,6 @@
 #!/bin/bash
+#
+# dependencies for sqlite3
 
 esc() {
     echo "$1" | perl -pe "s@'@''@g"

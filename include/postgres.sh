@@ -15,15 +15,17 @@ normalize_name() {
 }
 
 create_sql() { # uses: $id, $sourcedata, $processed, $processor
+    local sourcedata_esc=$(esc "${sourcedata}")
+    local processed_esc=$(esc "${processed}")
+
     sql="${sql}
-        INSERT INTO ${database}.${table} (id, timestamp, sourcedata, processed, processor)
-        VALUES('$id', now(), '$(esc "${sourcedata}")', '$(esc "${processed}")', '${processor}') 
-        ON CONFLICT (id) 
-        DO 
-        UPDATE SET 
-            timestamp=now(), 
-            sourcedata='$(esc "${sourcedata}")',
-            processed='$(esc "${processed}")',
+        INSERT INTO ${database}.${table} (id, timestamp, sourcedata, processed, processor) 
+        VALUES('$id', now(), '${sourcedata_esc}', '${processed_esc}', '${processor}') 
+        ON CONFLICT (id) DO UPDATE 
+        SET 
+            timestamp=now(),
+            sourcedata='${sourcedata_esc}',
+            processed='${processed_esc}',
             processor='${processor}'; "
 }
 
