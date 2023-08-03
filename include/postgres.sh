@@ -51,4 +51,7 @@ prepare_database() {
         echo "An error occured creating table ${database}.${table} in postgres."
         exit 1
     fi
+
+    echo "DB engine: ${db_engine}."
+    echo "Storing in: ${database}.${table}."
 }
