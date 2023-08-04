@@ -13,7 +13,7 @@ esc() {
 # 'exported' functions (as if): 
 
 db::normalize_name() {
-    echo "$1" | awk '{print $1}' |  tr '[:upper:]' '[:lower:]' |  tr -cd '[:alnum:]' 
+    echo "$1" |  tr '[:upper:]' '[:lower:]' | sed 's@[^a-z0-9]@@g'
 }
 
 db::create_sql() { 
