@@ -13,16 +13,16 @@ metadata_xpath="//*[local-name()='metadata']"
 resumptiontoken=''
 get=''
 
-source "$script_dir/include/settings.sh"
-if [ -f "$script_dir/include/settings_local.sh" ] ; then
+source "$script_dir/cfg/settings.sh"
+if [ -f "$script_dir/cfg/settings_local.sh" ] ; then
     # in .gitignore:
-    source "$script_dir/include/settings_local.sh"
+    source "$script_dir/cfg/settings_local.sh"
 fi
 
-source "$script_dir/include/${DB_ENGINE}.sh"
-if [ -f "$script_dir/include/${DB_ENGINE}_local.sh" ] ; then
+source "$script_dir/db/${DB_ENGINE}.sh"
+if [ -f "$script_dir/db/${DB_ENGINE}_local.sh" ] ; then
     # in .gitignore:
-    source "$script_dir/include/${DB_ENGINE}_local.sh"
+    source "$script_dir/db/${DB_ENGINE}_local.sh"
 fi
 
 
@@ -84,9 +84,9 @@ read_commandline_parameters() {
                 ;;
             v)  verbose=true
                 ;;
-            d)  database=$(normalize_name "$OPTARG")
+            d)  database=$(db::normalize_name "$OPTARG")
                 ;;
-            t)  table=$(normalize_name "$OPTARG")
+            t)  table=$(db::normalize_name "$OPTARG")
                 ;;
             f)  from_param="&from=$OPTARG"
                 ;;
@@ -115,7 +115,7 @@ check_parameter_validity() {
             echo "A database (-d) or set (-s) must be specified. "
             usage
         else
-            database=$(normalize_name "$set")
+            database=$(db::normalize_name "$set")
         fi
     fi
     if [ -z "$table" ] ; then
@@ -123,7 +123,7 @@ check_parameter_validity() {
             echo "A table (-t) of prefix (-p) must be specified."
             usage
         else
-            table=$(normalize_name "$prefix")
+            table=$(db::normalize_name "$prefix")
         fi
     fi 
     if [ -z "$oai_base" ] ; then
@@ -249,14 +249,9 @@ harvest_identifiers() {
 harvest_record() {
     local id="$1"
     local encoded_id=$(rawurlencode "$id")
-    local sourcedata="`$get "$oai_base?verb=GetRecord$prefix_param&identifier=$encoded_id" | xmllint --xpath "$metadata_xpath" - 2>/dev/null`"
-    if [ $? -ne 0 ] ; then return 1 ; fi
+    local sourcedata="$($get "$oai_base?verb=GetRecord$prefix_param&identifier=$encoded_id" | xmllint --xpath "$metadata_xpath" - 2>/dev/null)"
 
-    local processed=''
-    local processor=''
-
-    create_sql # $id, $sourcedata, $processed, $processor
-    if [ $? -ne 0 ] ; then return 1 ; fi
+    sql="${sql} $(echo "$sourcedata" | db::create_sql $database $table $id)"
         
     show_progress "."
 }
@@ -281,7 +276,7 @@ main_loop() {
             retry harvest_record "$id"
         done
 
-        process_sql
+        db::process_sql
 
         show_progress "\n$resumptiontoken\n"
     done
@@ -293,7 +288,7 @@ main_loop() {
 check_software_dependencies
 read_commandline_parameters "$@"
 check_parameter_validity
-prepare_database
+db::prepare_database $database $table
 set_harvest_parameters
 
 main_loop

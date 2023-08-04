@@ -1,6 +1,3 @@
-data/GGC-THES.db
+data/*
 .DS_Store
-include/settings_local.sh
-OUT.db
-X.db
-data/GGC-THES.db_
+cfg/settings_local.sh
