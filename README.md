@@ -50,7 +50,7 @@ Return data from `GGC-THES.db`, table `mdoall`:
 
 	dbwalker.sh -s GGC-THES -t mdoall
 
-Return selected data and process it with filter `./nta2schema.sh`:
+Return selected data and process it with filter `./nta2schema.sh` (from [https://github.com/renevoorburg/thes2rdf]() ):
 
 	dbwalker.sh -s GGC-THES -t mdoall -f "2023-05-15 17:56:03" -p "nta2schema.sh -x"
 
