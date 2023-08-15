@@ -154,7 +154,6 @@ harvest_identifiers() {
     resumptiontoken="`echo "${identifiers_xml}" \
         | xmllint --xpath "${RESUMPTIONTOKEN_XPATH}" - 2>/dev/null`"
     identifiers_url="${OAI_BASE_URL}?verb=ListIdentifiers&resumptionToken=${resumptiontoken}"
-    echo $identifiers_url
 }
 
 
