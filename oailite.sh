@@ -113,9 +113,9 @@ initiate_parameters() {
 
     if [ -z "${resumptiontoken}" ] ; then
         resumptiontoken='dummy'
-        url="${OAI_BASE_URL}?verb=ListIdentifiers${FROM_PARAM}${UNTIL_PARAM}${PREFIX_PARAM}${SET_PARAM}"
+        identifiers_url="${OAI_BASE_URL}?verb=ListIdentifiers${FROM_PARAM}${UNTIL_PARAM}${PREFIX_PARAM}${SET_PARAM}"
     else
-        url="${OAI_BASE_URL}?verb=ListIdentifiers&resumptionToken=${resumptiontoken}"
+        identifiers_url="${OAI_BASE_URL}?verb=ListIdentifiers&resumptionToken=${resumptiontoken}"
     fi   
 
     resume_params=" -b ${OAI_BASE_URL} -d ${DATABASE} -t ${TABLE}"
@@ -153,7 +153,8 @@ harvest_identifiers() {
         | perl -pe 's@<identifier[^\S\n]*>@@'`" 
     resumptiontoken="`echo "${identifiers_xml}" \
         | xmllint --xpath "${RESUMPTIONTOKEN_XPATH}" - 2>/dev/null`"
-    url="${OAI_BASE_URL}?verb=ListIdentifiers&resumptionToken=${resumptiontoken}"
+    identifiers_url="${OAI_BASE_URL}?verb=ListIdentifiers&resumptionToken=${resumptiontoken}"
+    echo $identifiers_url
 }
 
 
@@ -181,7 +182,7 @@ main() {
         fi
 
         # harvest: 
-        harvest_identifiers "${url}"
+        harvest_identifiers "${identifiers_url}"
         if [ $? -ne 0 ] ; then exit 1 ; fi
         
         for id in `echo "${identifiers}" ` ; do
