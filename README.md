@@ -1,5 +1,5 @@
 # oailite.sh
-A hell script based, OAI-PMH harvester that stores retrieved records in an sqlite or postgres database. It is based on [renevoorburg/oai2linerec](https://github.com/renevoorburg/oai2linerec)
+A shell script based, OAI-PMH harvester that stores retrieved records in an sqlite or postgres database. It is based on [renevoorburg/oai2linerec](https://github.com/renevoorburg/oai2linerec)
 
 The database of `oailite.sh` can be reused for incremental harvesting, which is a main benefit above [renevoorburg/oai2linerec](https://github.com/renevoorburg/oai2linerec). Further, since the OAI-PMH identifiers are used as the primary keys for the database, it  won't store duplicate records, as some OAI-PMH implementations tend to deliver.
 	
