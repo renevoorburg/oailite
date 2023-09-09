@@ -24,11 +24,16 @@ db::create_sql() {
     local id="$3"
 
     local sourcedata="$(esc "$(cat <&0)")"
+
+    echo "${sourcedata}" > $$.tmp
     if [ ! -z "${sourcedata}" ] ; then
         ${DB_CLIENT} ${database}.db "
             replace into ${table} (id, timestamp, sourcedata) 
-            values ('${id}', datetime(), '${sourcedata}');"
+            values ('${id}', datetime(), readfile('$$.tmp'));"
     fi
+
+    rm $$.tmp
+
 }
 
 
